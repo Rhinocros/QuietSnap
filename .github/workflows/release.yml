@@ -11,11 +11,21 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            artifact_name: QuietSnap-Windows.exe
-            build_cmd: go build -tags desktop,production -ldflags="-H windowsgui -s -w" -o QuietSnap-Windows.exe
+            arch: amd64
+            artifact_name: QuietSnap-Windows-amd64.exe
+            build_cmd: go build -tags desktop,production -ldflags="-H windowsgui -s -w" -o QuietSnap-Windows-amd64.exe
+          - os: windows-latest
+            arch: arm64
+            artifact_name: QuietSnap-Windows-arm64.exe
+            build_cmd: go build -tags desktop,production -ldflags="-H windowsgui -s -w" -o QuietSnap-Windows-arm64.exe
           - os: macos-latest
-            artifact_name: QuietSnap-macOS
-            build_cmd: go build -tags desktop,production -ldflags="-s -w" -o QuietSnap-macOS
+            arch: amd64
+            artifact_name: QuietSnap-macOS-intel
+            build_cmd: go build -tags desktop,production -ldflags="-s -w" -o QuietSnap-macOS-intel
+          - os: macos-latest
+            arch: arm64
+            artifact_name: QuietSnap-macOS-arm64
+            build_cmd: go build -tags desktop,production -ldflags="-s -w" -o QuietSnap-macOS-arm64
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -43,6 +53,7 @@ jobs:
         run: ${{ matrix.build_cmd }}
         env:
           CGO_ENABLED: 1
+          GOARCH: ${{ matrix.arch }}
           
       - name: Release
         uses: softprops/action-gh-release@v1
