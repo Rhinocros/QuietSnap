@@ -7,23 +7,29 @@ on:
 
 jobs:
   build:
+    permissions:
+      contents: write
     strategy:
       matrix:
         include:
           - os: windows-latest
             arch: amd64
+            cgo: 0
             artifact_name: QuietSnap-Windows-amd64.exe
             build_cmd: go build -tags desktop,production -ldflags="-H windowsgui -s -w" -o QuietSnap-Windows-amd64.exe
           - os: windows-latest
             arch: arm64
+            cgo: 0
             artifact_name: QuietSnap-Windows-arm64.exe
             build_cmd: go build -tags desktop,production -ldflags="-H windowsgui -s -w" -o QuietSnap-Windows-arm64.exe
           - os: macos-latest
             arch: amd64
+            cgo: 1
             artifact_name: QuietSnap-macOS-intel
             build_cmd: go build -tags desktop,production -ldflags="-s -w" -o QuietSnap-macOS-intel
           - os: macos-latest
             arch: arm64
+            cgo: 1
             artifact_name: QuietSnap-macOS-arm64
             build_cmd: go build -tags desktop,production -ldflags="-s -w" -o QuietSnap-macOS-arm64
     runs-on: ${{ matrix.os }}
@@ -52,7 +58,7 @@ jobs:
       - name: Build Backend
         run: ${{ matrix.build_cmd }}
         env:
-          CGO_ENABLED: 1
+          CGO_ENABLED: ${{ matrix.cgo }}
           GOARCH: ${{ matrix.arch }}
           
       - name: Release
