@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.go/
+*.exe
+bin/
+build/bin/
+frontend/dist/
+frontend/node_modules/
+.DS_Store

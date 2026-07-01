@@ -1,0 +1,52 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on tags like v0.1.0
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: QuietSnap-Windows.exe
+            build_cmd: go build -tags desktop,production -ldflags="-H windowsgui -s -w" -o QuietSnap-Windows.exe
+          - os: macos-latest
+            artifact_name: QuietSnap-macOS
+            build_cmd: go build -tags desktop,production -ldflags="-s -w" -o QuietSnap-macOS
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm install
+        
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: npm run build
+        
+      - name: Build Backend
+        run: ${{ matrix.build_cmd }}
+        env:
+          CGO_ENABLED: 1
+          
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ matrix.artifact_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
