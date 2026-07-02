@@ -437,15 +437,13 @@ onUnmounted(() => {
               <div class="form-group">
                 <label>{{ t('startDate') }}</label>
                 <div class="date-input-wrapper">
-                  <input type="date" v-model="task.startDate" :class="{ 'empty-date': !task.startDate }" />
-                  <span class="date-placeholder" v-if="!task.startDate">{{ t('datePlaceholder') }}</span>
+                  <input type="date" v-model="task.startDate" />
                 </div>
               </div>
               <div class="form-group">
                 <label>{{ t('endDate') }}</label>
                 <div class="date-input-wrapper">
-                  <input type="date" v-model="task.endDate" :class="{ 'empty-date': !task.endDate }" />
-                  <span class="date-placeholder" v-if="!task.endDate">{{ t('datePlaceholder') }}</span>
+                  <input type="date" v-model="task.endDate" />
                 </div>
               </div>
             </div>

@@ -557,15 +557,3 @@ button {
   align-items: center;
   width: 100%;
 }
-
-.empty-date::-webkit-datetime-edit {
-  color: transparent;
-}
-
-.date-placeholder {
-  position: absolute;
-  left: 12px;
-  pointer-events: none;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
-}
