@@ -17,7 +17,7 @@ import (
 //go:embed frontend/dist
 var assets embed.FS
 
-//go:embed logo.png
+//go:embed build/resources/appicon.png
 var appIcon []byte
 
 type AppService struct {
