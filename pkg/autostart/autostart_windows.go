@@ -8,7 +8,7 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
-const appName = "AutoScreenshot"
+const appName = "QuietSnap"
 
 func getExecPath() string {
 	execPath, err := os.Executable()

@@ -12,6 +12,73 @@ export class Config {
      * @param {Partial<Config>} [$$source = {}] - The source object to create the Config.
      */
     constructor($$source = {}) {
+        if (!("tasks" in $$source)) {
+            /**
+             * @member
+             * @type {TaskConfig[]}
+             */
+            this["tasks"] = [];
+        }
+        if (!("autoStart" in $$source)) {
+            /**
+             * @member
+             * @type {boolean}
+             */
+            this["autoStart"] = false;
+        }
+        if (!("showUIOnAutoStart" in $$source)) {
+            /**
+             * @member
+             * @type {boolean}
+             */
+            this["showUIOnAutoStart"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Config instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {Config}
+     */
+    static createFrom($$source = {}) {
+        const $$createField0_0 = $$createType1;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("tasks" in $$parsedSource) {
+            $$parsedSource["tasks"] = $$createField0_0($$parsedSource["tasks"]);
+        }
+        return new Config(/** @type {Partial<Config>} */($$parsedSource));
+    }
+}
+
+export class TaskConfig {
+    /**
+     * Creates a new TaskConfig instance.
+     * @param {Partial<TaskConfig>} [$$source = {}] - The source object to create the TaskConfig.
+     */
+    constructor($$source = {}) {
+        if (!("id" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["id"] = "";
+        }
+        if (!("name" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["name"] = "";
+        }
+        if (!("enabled" in $$source)) {
+            /**
+             * @member
+             * @type {boolean}
+             */
+            this["enabled"] = false;
+        }
         if (!("saveDirectory" in $$source)) {
             /**
              * @member
@@ -98,31 +165,21 @@ export class Config {
              */
             this["regionH"] = 0;
         }
-        if (!("autoStart" in $$source)) {
-            /**
-             * @member
-             * @type {boolean}
-             */
-            this["autoStart"] = false;
-        }
-        if (!("showUIOnAutoStart" in $$source)) {
-            /**
-             * @member
-             * @type {boolean}
-             */
-            this["showUIOnAutoStart"] = false;
-        }
 
         Object.assign(this, $$source);
     }
 
     /**
-     * Creates a new Config instance from a string or object.
+     * Creates a new TaskConfig instance from a string or object.
      * @param {any} [$$source = {}]
-     * @returns {Config}
+     * @returns {TaskConfig}
      */
     static createFrom($$source = {}) {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new Config(/** @type {Partial<Config>} */($$parsedSource));
+        return new TaskConfig(/** @type {Partial<TaskConfig>} */($$parsedSource));
     }
 }
+
+// Private type creation functions
+const $$createType0 = TaskConfig.createFrom;
+const $$createType1 = $Create.Array($$createType0);

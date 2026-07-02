@@ -17,6 +17,9 @@ import (
 //go:embed frontend/dist
 var assets embed.FS
 
+//go:embed logo.png
+var appIcon []byte
+
 type AppService struct {
 	app         *application.App
 	selectorWin *application.WebviewWindow
@@ -72,16 +75,25 @@ func (a *AppService) SetWindowTitle(title string) {
 
 func (a *AppService) OpenRegionSelector() {
 	if a.selectorWin != nil {
-		a.selectorWin.Close()
+		a.selectorWin.Show()
+		a.selectorWin.Focus()
+		return
 	}
+
 	a.selectorWin = a.app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            "Region Selector",
+		Title:            "Select Region",
+		Width:            800,
+		Height:           600,
 		Frameless:        true,
 		AlwaysOnTop:      true,
-		BackgroundColour: application.NewRGBA(0, 0, 0, 1),
+		BackgroundType:   application.BackgroundTypeTransparent,
+		BackgroundColour: application.NewRGBA(0, 0, 0, 0),
 		URL:              "/?mode=selector",
 	})
+
 	a.selectorWin.Fullscreen()
+	a.selectorWin.Show()
+	a.selectorWin.Focus()
 }
 
 type Region struct {
@@ -105,6 +117,7 @@ func main() {
 	app := application.New(application.Options{
 		Name:        "QuietSnap",
 		Description: "定时后台自动截图软件",
+		Icon:        appIcon,
 		Services: []application.Service{
 			application.NewService(appService),
 		},
@@ -177,9 +190,21 @@ func createWindow(app *application.App) *application.WebviewWindow {
 		Hidden: false,
 	})
 	
-	window.OnWindowEvent(events.Common.WindowClosing, func(evt *application.WindowEvent) {
-		window.Hide()
+	window.RegisterHook(events.Common.WindowClosing, func(evt *application.WindowEvent) {
+		evt.Cancel() // Cancel the default close behavior
+		app.Event.Emit("show-close-dialog")
 	})
 
 	return window
+}
+
+func (a *AppService) HideWindow() {
+	windows := a.app.Window.GetAll()
+	if len(windows) > 0 {
+		windows[0].Hide()
+	}
+}
+
+func (a *AppService) QuitApp() {
+	a.app.Quit()
 }

@@ -26,7 +26,13 @@ func Start(cfg *config.Config) error {
 	stopChan = make(chan struct{})
 	isRunning = true
 
-	go runSchedule(cfg, stopChan)
+	for i := range cfg.Tasks {
+		if cfg.Tasks[i].Enabled {
+			task := cfg.Tasks[i]
+			go runSchedule(&task, stopChan)
+		}
+	}
+	
 	return nil
 }
 
@@ -48,7 +54,7 @@ func IsRunning() bool {
 	return isRunning
 }
 
-func isWithinBounds(cfg *config.Config) (bool, bool) {
+func isWithinBounds(cfg *config.TaskConfig) (bool, bool) {
 	now := time.Now()
 	loc, _ := time.LoadLocation("Local")
 
@@ -101,7 +107,7 @@ func isWithinBounds(cfg *config.Config) (bool, bool) {
 	return true, false
 }
 
-func runSchedule(cfg *config.Config, stop <-chan struct{}) {
+func runSchedule(cfg *config.TaskConfig, stop <-chan struct{}) {
 	interval := time.Duration(cfg.IntervalMinutes) * time.Minute
 	if interval < time.Minute {
 		interval = time.Minute
@@ -109,13 +115,12 @@ func runSchedule(cfg *config.Config, stop <-chan struct{}) {
 
 	// Check immediately
 	if within, expired := isWithinBounds(cfg); expired {
-		log.Println("End date reached, stopping scheduler.")
-		Stop()
+		log.Printf("Task %s: End date reached, stopping scheduler.", cfg.Name)
 		return
 	} else if within {
 		err := screenshot.Capture(cfg)
 		if err != nil {
-			log.Println("Screenshot error:", err)
+			log.Printf("Task %s: Screenshot error: %v", cfg.Name, err)
 		}
 	}
 
@@ -127,14 +132,13 @@ func runSchedule(cfg *config.Config, stop <-chan struct{}) {
 		case <-ticker.C:
 			within, expired := isWithinBounds(cfg)
 			if expired {
-				log.Println("End date reached, stopping scheduler.")
-				Stop()
+				log.Printf("Task %s: End date reached, stopping scheduler.", cfg.Name)
 				return
 			}
 			if within {
 				err := screenshot.Capture(cfg)
 				if err != nil {
-					log.Println("Screenshot error:", err)
+					log.Printf("Task %s: Screenshot error: %v", cfg.Name, err)
 				}
 			}
 		case <-stop:

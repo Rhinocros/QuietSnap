@@ -13,7 +13,7 @@ import (
 	"autoscreen/pkg/config"
 )
 
-func Capture(cfg *config.Config) error {
+func Capture(cfg *config.TaskConfig) error {
 	if cfg.SaveDirectory == "" {
 		return fmt.Errorf("save directory is not set")
 	}

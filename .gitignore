@@ -12,3 +12,6 @@ build/android/gen/
 token.txt
 *.exe.go/
 .go/
+QuietSnap.exe
+config.json
+logo.png

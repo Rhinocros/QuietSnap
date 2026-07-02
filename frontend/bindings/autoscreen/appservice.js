@@ -24,6 +24,13 @@ export function GetConfig() {
 }
 
 /**
+ * @returns {$CancellablePromise<void>}
+ */
+export function HideWindow() {
+    return $Call.ByID(1687209814);
+}
+
+/**
  * @returns {$CancellablePromise<boolean>}
  */
 export function IsSchedulerRunning() {
@@ -42,6 +49,13 @@ export function MinimizeWindow() {
  */
 export function OpenRegionSelector() {
     return $Call.ByID(3594854379);
+}
+
+/**
+ * @returns {$CancellablePromise<void>}
+ */
+export function QuitApp() {
+    return $Call.ByID(3291959616);
 }
 
 /**
