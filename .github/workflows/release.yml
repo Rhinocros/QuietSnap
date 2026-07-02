@@ -115,6 +115,9 @@ jobs:
           DMG_NAME="${{ matrix.artifact_name }}.dmg"
           hdiutil create -volname "QuietSnap" -srcfolder "$APP_NAME" -ov -format UDZO "$DMG_NAME"
           
+          # Remove the raw binary so it isn't uploaded to the release
+          rm ${{ matrix.artifact_name }}
+          
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
