@@ -268,6 +268,15 @@ const handleDateBlur = (task: any, field: 'startDate' | 'endDate', e: Event) => 
   input.value = val;
 };
 
+const openPicker = (e: Event) => {
+  try {
+    const target = e.target as HTMLInputElement;
+    if (target && target.showPicker) {
+      target.showPicker();
+    }
+  } catch (err) {}
+};
+
 const confirmPolicy = (policy: string, days?: number) => {
   pendingDeletePolicy.value = policy;
   if (days) pendingDeleteDays.value = days;
@@ -519,7 +528,7 @@ onUnmounted(() => {
                   <input type="text" :value="task.startDate" @input="handleDateInput(task, 'startDate', $event)" @blur="handleDateBlur(task, 'startDate', $event)" :placeholder="t('datePlaceholder')" maxlength="10" />
                   <div class="calendar-icon-wrapper">
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                    <input type="date" :value="task.startDate" @input="task.startDate = ($event.target as HTMLInputElement).value" onclick="try{this.showPicker()}catch(e){}" class="hidden-date-picker" />
+                    <input type="date" :value="task.startDate" @input="task.startDate = ($event.target as HTMLInputElement).value" @click="openPicker" class="hidden-date-picker" />
                   </div>
                 </div>
               </div>
@@ -529,7 +538,7 @@ onUnmounted(() => {
                   <input type="text" :value="task.endDate" @input="handleDateInput(task, 'endDate', $event)" @blur="handleDateBlur(task, 'endDate', $event)" :placeholder="t('datePlaceholder')" maxlength="10" />
                   <div class="calendar-icon-wrapper">
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                    <input type="date" :value="task.endDate" @input="task.endDate = ($event.target as HTMLInputElement).value" onclick="try{this.showPicker()}catch(e){}" class="hidden-date-picker" />
+                    <input type="date" :value="task.endDate" @input="task.endDate = ($event.target as HTMLInputElement).value" @click="openPicker" class="hidden-date-picker" />
                   </div>
                 </div>
               </div>
