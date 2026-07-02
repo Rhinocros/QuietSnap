@@ -130,10 +130,9 @@ const dict = {
     currPolicy: "Current Policy:"
   }
 };
-const t = (key: keyof typeof dict.zh) => dict[lang.value as keyof typeof dict][key] || key;
 
 watch(lang, (newLang, oldLang) => {
-  document.documentElement.lang = newLang === 'zh' ? 'zh-CN' : 'en';
+  document.documentElement.lang = newLang === 'zh' ? 'zh-CN' : 'en-US';
   SetWindowTitle(newLang === 'zh' ? 'QuietSnap 自动截屏控制面板' : 'QuietSnap Control Panel');
 
   if (oldLang && tasks.value) {
@@ -146,6 +145,8 @@ watch(lang, (newLang, oldLang) => {
     });
   }
 }, { immediate: true });
+
+const t = (key: keyof typeof dict.zh) => dict[lang.value as keyof typeof dict][key] || key;
 
 // State
 const tasks = ref<any[]>([]);
@@ -187,6 +188,84 @@ const openDeleteDialog = (taskId: string) => {
 
 const preConfirmPolicy = () => {
   confirmPolicy(tempDeletePolicy.value, tempDays.value);
+};
+
+const handleDateInput = (task: any, field: 'startDate' | 'endDate', e: Event) => {
+  const input = e.target as HTMLInputElement;
+  const isDeleting = (e as InputEvent).inputType?.startsWith('delete');
+  let val = input.value.replace(/[^\d-]/g, ''); 
+  
+  if (!isDeleting) {
+    let parts = val.split('-');
+    
+    // Auto-pad month if first digit is 2-9
+    if (parts.length === 2 && parts[1].length === 1) {
+      if (parseInt(parts[1]) >= 2) {
+        parts[1] = '0' + parts[1];
+        val = parts.join('-');
+      }
+    }
+    
+    // Auto-pad day if first digit is 4-9
+    if (parts.length === 3 && parts[2].length === 1) {
+      if (parseInt(parts[2]) >= 4) {
+        parts[2] = '0' + parts[2];
+        val = parts.join('-');
+      }
+    }
+
+    // Restrict month to <= 12
+    if (parts.length >= 2 && parts[1].length === 2) {
+      let m = parseInt(parts[1]);
+      if (m > 12) {
+        parts[1] = '12';
+        val = parts.join('-');
+      } else if (m === 0) {
+        parts[1] = '01';
+        val = parts.join('-');
+      }
+    }
+
+    // Restrict day to <= 31
+    if (parts.length === 3 && parts[2].length === 2) {
+      let d = parseInt(parts[2]);
+      if (d > 31) {
+        parts[2] = '31';
+        val = parts.join('-');
+      } else if (d === 0) {
+        parts[2] = '01';
+        val = parts.join('-');
+      }
+    }
+
+    if (val.length === 4 && !val.includes('-')) val += '-';
+    else if (val.length === 7 && val.split('-').length === 2) val += '-';
+  }
+  
+  task[field] = val;
+  input.value = val;
+};
+
+const handleDateBlur = (task: any, field: 'startDate' | 'endDate', e: Event) => {
+  const input = e.target as HTMLInputElement;
+  let val = input.value;
+  
+  if (/^\d{8}$/.test(val)) {
+    val = `${val.substring(0,4)}-${val.substring(4,6)}-${val.substring(6,8)}`;
+  } else {
+    let parts = val.split('-');
+    if (parts.length === 3) {
+      let y = parts[0];
+      let m = parts[1].padStart(2, '0');
+      let d = parts[2].padStart(2, '0');
+      if (y.length === 4) {
+        val = `${y}-${m}-${d}`;
+      }
+    }
+  }
+  
+  task[field] = val;
+  input.value = val;
 };
 
 const confirmPolicy = (policy: string, days?: number) => {
@@ -437,13 +516,21 @@ onUnmounted(() => {
               <div class="form-group">
                 <label>{{ t('startDate') }}</label>
                 <div class="date-input-wrapper">
-                  <input type="date" v-model="task.startDate" />
+                  <input type="text" :value="task.startDate" @input="handleDateInput(task, 'startDate', $event)" @blur="handleDateBlur(task, 'startDate', $event)" :placeholder="t('datePlaceholder')" maxlength="10" />
+                  <div class="calendar-icon-wrapper">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <input type="date" :value="task.startDate" @input="task.startDate = ($event.target as HTMLInputElement).value" onclick="try{this.showPicker()}catch(e){}" class="hidden-date-picker" />
+                  </div>
                 </div>
               </div>
               <div class="form-group">
                 <label>{{ t('endDate') }}</label>
                 <div class="date-input-wrapper">
-                  <input type="date" v-model="task.endDate" />
+                  <input type="text" :value="task.endDate" @input="handleDateInput(task, 'endDate', $event)" @blur="handleDateBlur(task, 'endDate', $event)" :placeholder="t('datePlaceholder')" maxlength="10" />
+                  <div class="calendar-icon-wrapper">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <input type="date" :value="task.endDate" @input="task.endDate = ($event.target as HTMLInputElement).value" onclick="try{this.showPicker()}catch(e){}" class="hidden-date-picker" />
+                  </div>
                 </div>
               </div>
             </div>
