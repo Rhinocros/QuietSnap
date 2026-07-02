@@ -22,6 +22,8 @@ type TaskConfig struct {
 	RegionY         int    `json:"regionY"`
 	RegionW         int    `json:"regionW"`
 	RegionH         int    `json:"regionH"`
+	DeletePolicy    string `json:"deletePolicy"`
+	DeleteDays      int    `json:"deleteDays"`
 }
 
 type Config struct {

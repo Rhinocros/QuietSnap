@@ -113,11 +113,15 @@ func runSchedule(cfg *config.TaskConfig, stop <-chan struct{}) {
 		interval = time.Minute
 	}
 
+	isStartup := true
+
 	// Check immediately
 	if within, expired := isWithinBounds(cfg); expired {
 		log.Printf("Task %s: End date reached, stopping scheduler.", cfg.Name)
 		return
 	} else if within {
+		executeCleanup(cfg, isStartup)
+		isStartup = false
 		err := screenshot.Capture(cfg)
 		if err != nil {
 			log.Printf("Task %s: Screenshot error: %v", cfg.Name, err)
@@ -136,6 +140,8 @@ func runSchedule(cfg *config.TaskConfig, stop <-chan struct{}) {
 				return
 			}
 			if within {
+				executeCleanup(cfg, isStartup)
+				isStartup = false
 				err := screenshot.Capture(cfg)
 				if err != nil {
 					log.Printf("Task %s: Screenshot error: %v", cfg.Name, err)

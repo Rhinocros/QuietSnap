@@ -53,7 +53,21 @@ const dict = {
     closeAppMsg: "您是要缩小到托盘运行，还是直接退出程序？",
     minimizeToTray: "缩小到托盘",
     quitDirectly: "直接退出",
-    cancel: "取消"
+    cancel: "取消",
+    autoDeleteSettings: "自动清理设置",
+    policyNever: "从不删除",
+    policyNeverDesc: "保留所有生成的截图文件。",
+    policyYesterday: "删除昨天",
+    policyYesterdayDesc: "自动清理昨天生成的截图文件。",
+    policyPrevRun: "删除上一次运行",
+    policyPrevRunDesc: "在每次开始截图任务时，自动清理上一次运行产生的所有图片。",
+    policyKeepN: "保存最近 N 天",
+    policyKeepNDesc: "仅保留最近几天生成的截图，更早的自动清理。",
+    policyCommonNotice: "提示：系统会在每次写入图片前自动检查并执行清理。所有被清理的文件都将放入【回收站】，不会直接彻底删除，以防误删。",
+    daysLabel: "天",
+    confirmPolicyChange: "确定要将清理策略设置为",
+    confirm: "确定",
+    currPolicy: "当前策略:"
   },
   en: {
     title: "QuietSnap",
@@ -99,7 +113,21 @@ const dict = {
     closeAppMsg: "Would you like to minimize to the system tray or quit directly?",
     minimizeToTray: "Minimize to Tray",
     quitDirectly: "Quit Directly",
-    cancel: "Cancel"
+    cancel: "Cancel",
+    autoDeleteSettings: "Auto-Delete Settings",
+    policyNever: "Never Delete",
+    policyNeverDesc: "Keep all generated screenshot files.",
+    policyYesterday: "Delete Yesterday",
+    policyYesterdayDesc: "Automatically clean up screenshots generated yesterday.",
+    policyPrevRun: "Delete Previous Run",
+    policyPrevRunDesc: "Automatically clean up all screenshots generated in the previous run when starting a task.",
+    policyKeepN: "Keep for N Days",
+    policyKeepNDesc: "Only keep screenshots generated in recent days, automatically clean older ones.",
+    policyCommonNotice: "Note: Cleanup runs automatically before writing each image. Cleaned files are moved to the Recycle Bin, not permanently deleted.",
+    daysLabel: "Days",
+    confirmPolicyChange: "Are you sure you want to change the deletion policy to",
+    confirm: "Confirm",
+    currPolicy: "Current Policy:"
   }
 };
 const t = (key: keyof typeof dict.zh) => dict[lang.value as keyof typeof dict][key] || key;
@@ -131,6 +159,56 @@ const isRunning = ref(false);
 let statusInterval: number;
 const alertMessage = ref('');
 
+const showDeleteDialog = ref<string | null>(null);
+const showDeleteConfirm = ref<string | null>(null);
+const tempDeletePolicy = ref<string>('never');
+const pendingDeletePolicy = ref<string>('never');
+const pendingDeleteDays = ref<number>(7);
+const tempDays = ref<number>(7);
+
+const getPolicyName = (p: string) => {
+  switch (p) {
+    case 'never': return t('policyNever');
+    case 'yesterday': return t('policyYesterday');
+    case 'previous_run': return t('policyPrevRun');
+    case 'keep_n_days': return t('policyKeepN');
+    default: return p;
+  }
+};
+
+const openDeleteDialog = (taskId: string) => {
+  const task = tasks.value.find(t => t.id === taskId);
+  if (task) {
+    tempDays.value = task.deleteDays || 7;
+    tempDeletePolicy.value = task.deletePolicy || 'never';
+  }
+  showDeleteDialog.value = taskId;
+};
+
+const preConfirmPolicy = () => {
+  confirmPolicy(tempDeletePolicy.value, tempDays.value);
+};
+
+const confirmPolicy = (policy: string, days?: number) => {
+  pendingDeletePolicy.value = policy;
+  if (days) pendingDeleteDays.value = days;
+  showDeleteConfirm.value = policy;
+};
+
+const applyPolicy = () => {
+  if (showDeleteDialog.value) {
+    const task = tasks.value.find(t => t.id === showDeleteDialog.value);
+    if (task) {
+      task.deletePolicy = pendingDeletePolicy.value;
+      if (pendingDeletePolicy.value === 'keep_n_days') {
+        task.deleteDays = pendingDeleteDays.value;
+      }
+    }
+  }
+  showDeleteConfirm.value = null;
+  showDeleteDialog.value = null;
+};
+
 const loadConfig = async () => {
   try {
     const cfg = await GetConfig();
@@ -159,7 +237,9 @@ const addTask = () => {
     intervalMinutes: 5,
     mode: 'fullscreen',
     format: 'png',
-    regionX: 0, regionY: 0, regionW: 800, regionH: 600
+    regionX: 0, regionY: 0, regionW: 800, regionH: 600,
+    deletePolicy: 'never',
+    deleteDays: 7
   });
 };
 
@@ -417,6 +497,14 @@ onUnmounted(() => {
               </div>
             </div>
 
+            <div class="form-group row-group" style="margin-top: 15px;">
+              <label>{{ t('autoDeleteSettings') }}</label>
+              <div class="input-with-button">
+                <input type="text" :value="getPolicyName(task.deletePolicy || 'never') + (task.deletePolicy === 'keep_n_days' ? ' (' + (task.deleteDays || 7) + ' ' + t('daysLabel') + ')' : '')" readonly />
+                <button class="btn-secondary" @click="openDeleteDialog(task.id)">{{ t('autoDeleteSettings') }}</button>
+              </div>
+            </div>
+
           </div>
 
           <!-- Edit button for list mode -->
@@ -469,8 +557,61 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- Auto Delete Settings Modal -->
+    <div v-if="showDeleteDialog" class="modal-overlay" style="z-index: 1000">
+      <div class="glass-modal" style="width: 600px; max-width: 90vw; text-align: left;">
+        <h3 style="margin-bottom: 20px; text-align: center;">{{ t('autoDeleteSettings') }}</h3>
+        
+        <div class="policy-list" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+          <div class="policy-item" :style="{ borderColor: tempDeletePolicy === 'never' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }" style="padding: 10px; border-width: 2px; border-style: solid; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;" @click="tempDeletePolicy = 'never'">
+            <h4 style="margin: 0 0 5px 0; color: #fff;">{{ t('policyNever') }}</h4>
+            <p style="margin: 0; font-size: 0.9em; opacity: 0.8;">{{ t('policyNeverDesc') }}</p>
+          </div>
+          
+          <div class="policy-item" :style="{ borderColor: tempDeletePolicy === 'yesterday' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }" style="padding: 10px; border-width: 2px; border-style: solid; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;" @click="tempDeletePolicy = 'yesterday'">
+            <h4 style="margin: 0 0 5px 0; color: #fff;">{{ t('policyYesterday') }}</h4>
+            <p style="margin: 0; font-size: 0.9em; opacity: 0.8;">{{ t('policyYesterdayDesc') }}</p>
+          </div>
+          
+          <div class="policy-item" :style="{ borderColor: tempDeletePolicy === 'previous_run' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }" style="padding: 10px; border-width: 2px; border-style: solid; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;" @click="tempDeletePolicy = 'previous_run'">
+            <h4 style="margin: 0 0 5px 0; color: #fff;">{{ t('policyPrevRun') }}</h4>
+            <p style="margin: 0; font-size: 0.9em; opacity: 0.8;">{{ t('policyPrevRunDesc') }}</p>
+          </div>
+          
+          <div class="policy-item" :style="{ borderColor: tempDeletePolicy === 'keep_n_days' ? '#4a90e2' : 'rgba(255,255,255,0.1)' }" style="padding: 10px; border-width: 2px; border-style: solid; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;" @click="tempDeletePolicy = 'keep_n_days'">
+            <h4 style="margin: 0 0 5px 0; color: #fff;">{{ t('policyKeepN') }}</h4>
+            <p style="margin: 0 0 10px 0; font-size: 0.9em; opacity: 0.8;">{{ t('policyKeepNDesc') }}</p>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input type="number" v-model="tempDays" min="1" style="width: 80px; padding: 5px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white;" @click.stop /> 
+              <span>{{ t('daysLabel') }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div style="font-size: 0.85em; opacity: 0.7; margin-bottom: 20px; line-height: 1.4; color: #ccc;">
+          {{ t('policyCommonNotice') }}
+        </div>
+        
+        <div style="display: flex; justify-content: center; gap: 15px; margin-top: 20px;">
+          <button class="btn-primary" @click="preConfirmPolicy">{{ t('confirm') }}</button>
+          <button class="btn-secondary" @click="showDeleteDialog = null">{{ t('cancel') }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Policy Modal -->
+    <div v-if="showDeleteConfirm" class="modal-overlay" style="z-index: 1001">
+      <div class="glass-modal">
+        <p style="font-size: 1.1em; margin-bottom: 20px;">{{ t('confirmPolicyChange') }} <strong>[{{ getPolicyName(pendingDeletePolicy) }}]</strong> ?</p>
+        <div class="modal-actions">
+          <button class="btn-primary" @click="applyPolicy()">{{ t('confirm') }}</button>
+          <button class="btn-secondary" @click="showDeleteConfirm = null">{{ t('cancel') }}</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Alert Modal -->
-    <div v-if="alertMessage" class="modal-overlay">
+    <div v-if="alertMessage" class="modal-overlay" style="z-index: 1002">
       <div class="glass-modal">
         <p>{{ alertMessage }}</p>
         <button class="btn-primary" @click="alertMessage = ''">{{ t('ok') }}</button>
