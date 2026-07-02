@@ -7,7 +7,6 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
-	"github.com/wailsapp/wails/v3/pkg/icons"
 
 	"autoscreen/pkg/autostart"
 	"autoscreen/pkg/config"
@@ -131,12 +130,8 @@ func main() {
 	appService.app = app
 
 	tray := app.SystemTray.New()
-	tray.SetLabel("QuietSnap")
-	
-	// Wails v3 uses built-in icons like icons.SystrayLight
-	if len(icons.SystrayLight) > 0 {
-		tray.SetIcon(icons.SystrayLight)
-	}
+	tray.SetTooltip("QuietSnap")
+	tray.SetIcon(appIcon)
 
 	myMenu := app.NewMenu()
 	myMenu.Add("显示界面").OnClick(func(ctx *application.Context) {

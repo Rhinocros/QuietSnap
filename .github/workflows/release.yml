@@ -111,9 +111,28 @@ jobs:
           sips -z 1024 1024 build/resources/appicon.png --out icon.iconset/icon_512x512@2x.png
           iconutil -c icns icon.iconset -o "$APP_NAME/Contents/Resources/icon.icns"
           
+          # Install create-dmg
+          brew install create-dmg
+          
           # Create DMG
           DMG_NAME="${{ matrix.artifact_name }}.dmg"
-          hdiutil create -volname "QuietSnap" -srcfolder "$APP_NAME" -ov -format UDZO "$DMG_NAME"
+          create-dmg \
+            --volname "QuietSnap" \
+            --volicon "$APP_NAME/Contents/Resources/icon.icns" \
+            --background "build/resources/dmg_background.png" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "QuietSnap.app" 150 190 \
+            --hide-extension "QuietSnap.app" \
+            --app-drop-link 450 190 \
+            "$DMG_NAME" \
+            "$APP_NAME" || true
+            
+          # Fallback if create-dmg fails
+          if [ ! -f "$DMG_NAME" ]; then
+             hdiutil create -volname "QuietSnap" -srcfolder "$APP_NAME" -ov -format UDZO "$DMG_NAME"
+          fi
           
           # Remove the raw binary so it isn't uploaded to the release
           rm ${{ matrix.artifact_name }}
